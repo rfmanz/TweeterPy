@@ -1,96 +1,8 @@
 import json 
+from datetime import datetime
 from tweeterpy import TweeterPy
 
-
-
-
-#twitter password  =AJ#~Z+cBUR&7r/ 
-
-
-
-
-
-twitter = TweeterPy()
-
-
-# twitter.get_liked_tweets('rngland')
-
-
-# twitter.get_friends('rngland', following=True)
-
-
-# with open("me.json", "w") as a:
-#     json.dump(twitter.get_user_info('rngland'), a)
-
-
-twitter.logged_in()
-
-
-from liked_tweets import liked_tweets
-liked_tweets = liked_tweets.locals()
-
-
-with open('liked_tweets.py', 'r') as file:
-    file_contents = file.read()
-
-
-my_dict = {}
-exec(file_contents, my_dict)
-
-
-from IPython.core.interactiveshell import InteractiveShell
-InteractiveShell.ast_node_interactivity = "all"
-from IPython.display import Markdown
-
-
-len(my_dict['liked']['data'])
-
-
-rest_ids = []
-contains_rest_id = my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']
-for i in range(len(my_dict['liked']['data'])):
-    if 'rest_id' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']:
-        rest_ids.append(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['rest_id'])
-    
-rest_ids[0:10]
-
-
-from datetime import datetime
-
-
-created_at = []
-for i in range(len(my_dict['liked']['data'])):
-    if 'legacy' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']:
-        created_at.append(datetime.strptime(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['legacy']['created_at'], "%a %b %d %H:%M:%S %z %Y").strftime("%Y-%m-%d %H:%M:%S"))
-len(created_at)
-created_at[0:10]
-
-
-profile_images = []
-for i in range(len(my_dict['liked']['data'])):
-    if 'core' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']:
-        profile_images.append(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['core']['user_results']['result']['legacy']['profile_image_url_https'])
-        
-len(profile_images)
-profile_images[0:10]
-
-
-g_sheet_profile_images = ["=IMAGE(\"" + profile_images[i] + "\"" + ',4 ,45, 45)'  for i in range(len(profile_images))]
-
-g_sheet_profile_images = [image.replace("'", "") for image in g_sheet_profile_images]
-
-g_sheet_profile_images[0:10]
-
-
-
-
-
-screen_names = []
-for i in range(len(my_dict['liked']['data'])):
-    if 'core' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']:
-        screen_names.append(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['core']['user_results']['result']['legacy']['screen_name'])
-len(screen_names)
-screen_names[0:10]
+from gspread_dataframe import set_with_dataframe
 
 
 import gspread
@@ -108,65 +20,167 @@ credentials = {
 }
 
 
-gc, authorized_user = gspread.oauth_from_dict(credentials)
-
-sh = gc.open("liked_tweets")
-
-
-get_ipython().system('pip install gspread_dataframe')
+# twitter = TweeterPy()
+# twitter.get_liked_tweets('rngland')
+# twitter.get_friends('rngland', following=True)
 
 
-from gspread_dataframe import set_with_dataframe
+worksheet.format(f"g2:g{len(rest_ids)}", {
+  "textFormat": {
+    "fontSize": 14
+   }
+})
 
 
-worksheet  = sh.get_worksheet(0)
+with open('liked_tweets.py', 'r') as file:
+    file_contents = file.read()
+my_dict = {}
+exec(file_contents, my_dict)
 
 
-set_with_dataframe(worksheet, df) 
+rest_ids = []
+for i in range(len(my_dict['liked']['data'])):
+    if 'rest_id' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']:
+        rest_ids.append(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['rest_id'])
 
 
-len((df.columns))
+created_at = []
+for i in range(len(my_dict['liked']['data'])):
+    if 'legacy' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']:
+        created_at.append(datetime.strptime(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['legacy']['created_at'], "%a %b %d %H:%M:%S %z %Y").strftime("%Y-%m-%d %H:%M:%S"))
 
 
-sh.add_worksheet(title='h', rows=len(df), cols=len((df.columns))).update(
-    [df.columns.values.tolist()] + df.values.tolist()
-)
+result = []
+
+for i in range(len(my_dict['liked']['data'])): 
+    if 'legacy' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result'] and \
+    len(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['legacy']['entities']['urls']) >= 1:
+        urls = my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['legacy']['entities']['urls']
+        expanded_urls = [p['expanded_url'] for p in urls]
+        result.append('  '.join(expanded_urls))
+    else:
+        result.append((' '))
 
 
-worksheet_list = sh.worksheets()
-worksheet_names = [i.title for i in worksheet_list]
-worksheet_names
+profile_images = []
+for i in range(len(my_dict['liked']['data'])):
+    if 'core' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']:
+        profile_images.append(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['core']['user_results']['result']['legacy']['profile_image_url_https'])
+        
+len(profile_images)
+profile_images[0:3]
 
 
-tweet_url =['https://twitter.com/' + screen_name[i] + '/status/' + rest_ids[i] for i in range(len(
-screen_name))]
+p_img = ["=IMAGE(\"" + profile_images[i] + "\"" + ',4 ,45, 45)'  for i in range(len(profile_images))]
+
+p_img = [image.replace("'", "") for image in p_img]
+
+p_img[0:3]
+
+
+screen_names = []
+for i in range(len(my_dict['liked']['data'])):
+    if 'core' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']:
+        screen_names.append(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['core']['user_results']['result']['legacy']['screen_name'])
+
+
+name = []
+for i in range(len(my_dict['liked']['data'])):
+    if 'core' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']:
+        name.append(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['core']['user_results']['result']['legacy']['name'])
+# name       
+
+
+profile_url =['https://twitter.com/' + i for i in screen_names]
 
 
 full_text = []
 for i in range(len(my_dict['liked']['data'])):
     if 'legacy' in my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']:
-        full_text.append(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['legacy']['full_text'])
+        full_text.append(my_dict['liked']['data'][i]['content']['itemContent']['tweet_results']['result']['legacy']['full_text'])           
+
+
+tweet_url =['https://twitter.com/' + screen_names[i] + '/status/' + rest_ids[i] for i in range(len(
+screen_names))]
+
+
+card_title = [p['value']['string_value'] for i in binding_values for p in i if p['key'] == 'title']
+
+card_description = [p['value']['string_value'] for i in binding_values for p in i if p['key'] == 'description']
+
+card_thumbnail_image= [p['value']['image_value']['url'] for i in binding_values for p in i if p['key'] == 'thumbnail_image']
+
+card_photo_image_full_size_alt_text = [p['value']['string_value'] for i in binding_values for p in i if p['key'] == 'photo_image_full_size_alt_text']
+
+
+fields = [
+rest_ids,
+created_at,
+profile_url,
+p_img,
+screen_names,
+full_text,
+tweet_url,
+result,
+name,
+card_title,
+card_description,
+card_thumbnail_image,
+card_photo_image_full_size_alt_text
+]
+
+# def normalize_array_length():
+#     if len(rest_ids) != len(result):
+#         while len(result) > len(rest_ids) and result[-1] == ' ':
+#             _ = result.pop()
+
+
+len(rest_ids)
+len(created_at)
+len(profile_url)
+len(p_img)
+len(screen_names)
 len(full_text)
-full_text[0:10]
+len(tweet_url)
+len(result)
+len(name)
+len(card_title)
+len(card_description)
+len(card_thumbnail_image)
+len(card_photo_image_full_size_alt_text)
 
 
 import pandas as pd
 
-# urls
-data = {"rest_ids" : rest_ids, "created_at" : created_at,"g_sheet_profile_images" : g_sheet_profile_images ,"screen_names" :screen_names ,"full_text": full_text,"tweet_url": tweet_url}
+data = {
+    "rest_ids" : rest_ids, 
+    "created_at" : created_at, 
+    "profile_url":profile_url, 
+    "p_img" : p_img,    
+    "screen_names" :screen_names,
+    "name" : name, 
+    "full_text": full_text, 
+    "expanded_urls" : result, 
+    "tweet_url": tweet_url
+}
 df = pd.DataFrame(data)
 # df.to_csv('D:/Github/TweeterPy/liked_tweets.csv')
 
 
-df
+set_with_dataframe(worksheet, df) 
 
 
-# cards 
 
-# each element in the list is
-#  a dictionary. for each dictionary search for title, description, photo_image_full_size_alt_text, thumbnail_image and then get value, string_value and url for photo_image_full_size_alt_text
 
-my_dict['liked']['data'][0]['content']['itemContent']['tweet_results']['result']['card']['legacy']['binding_values'][2]['value']['string_value']
+
+gc, authorized_user = gspread.oauth_from_dict(credentials)
+
+
+sh = gc.open("liked_tweets")
+worksheet  = sh.get_worksheet(0)    
+
+
+
 
 
 print(my_dict['liked']['data'][8]['content']['itemContent']['tweet_results']['result']['legacy']['full_text'])
