@@ -4,6 +4,8 @@
 
 > __issues:__ what if tweet has no text or the text is referring to an embedded tweet, image or video. see: [shit's going to have to be multimodal??](https://twitter.com/mayfer/status/1704989552459579398)
 
+^see: https://arxiv.org/pdf/2209.09824.pdf
+
 
 
 __a story in four parts:__
