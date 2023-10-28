@@ -6,6 +6,7 @@
 
 ^see: https://arxiv.org/pdf/2209.09824.pdf
 
+This is a sentence with superscript^text^.
 
 
 __a story in four parts:__
