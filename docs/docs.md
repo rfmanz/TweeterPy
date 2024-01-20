@@ -42,6 +42,43 @@ print(twitter.get_user_id('elonmusk'))
 
 ```
 
+> ### Example - Get User Tweets (Pagination Usage).
+
+```python
+import time, random
+from tweeterpy import TweeterPy
+from tweeterpy import config
+from tweeterpy.util import RateLimitError
+
+# Check Configuration docs for the available settings.
+# config.PROXY = {"http":"127.0.0.1","https":"127.0.0.1"}
+# config.TIMEOUT = 10
+
+twitter = TweeterPy()
+# login if required
+
+user_tweets = []
+has_more = True
+cursor = None
+while has_more:
+    try:
+        response = None
+        response = twitter.get_user_tweets('elonmusk', end_cursor=cursor, pagination=False)
+        user_tweets.extend(response['data'])
+        has_more = response.get('has_next_page')
+        api_rate_limits = response.get('api_rate_limit')
+        limit_exhausted = api_rate_limits.get('rate_limit_exhausted')
+        if has_more:
+            cursor = response.get('cursor_endpoint')
+        ## YOUR CUSTOM CODE HERE (DATA HANDLING, REQUEST DELAYS, SESSION SHUFFLING ETC.)
+        ## time.sleep(random.uniform(7,10))
+        if limit_exhausted:
+            raise RateLimitError
+    except Exception as error:
+        print(error)
+        break
+```
+
 > ### Example - Get Data out of Nested Python Dict/List With User/Tweet Dataclasses (Easy Way)
 
 ```python
@@ -297,7 +334,7 @@ get_multiple_users_data(user_ids)
 ## Get User's Tweets
 
 ```python
-get_user_tweets(user_id, with_replies=False, end_cursor=None, total=None)
+get_user_tweets(user_id, with_replies=False, end_cursor=None, total=None, pagination=True)
 
     """
         Get Tweets from a user's profile.
@@ -307,6 +344,7 @@ get_user_tweets(user_id, with_replies=False, end_cursor=None, total=None)
             with_replies (bool, optional): Set to True if want to get the tweets user replied to, from user's profile page. Defaults to False.
             end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Defaults to None.
             total (int, optional): Total(Max) number of results you want to get. If None, extracts all results. Defaults to None.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
 
         Returns:
             dict: Returns data, cursor_endpoint, has_next_page
@@ -316,7 +354,7 @@ get_user_tweets(user_id, with_replies=False, end_cursor=None, total=None)
 ## Get User Media Posts -- LOGIN REQUIRED
 
 ```python
-get_user_media(user_id, end_cursor=None, total=None)
+get_user_media(user_id, end_cursor=None, total=None, pagination=True)
 
     """
         Get media from a user's profile.
@@ -334,7 +372,7 @@ get_user_media(user_id, end_cursor=None, total=None)
 ## Get Details of a Tweet Post
 
 ```python
-get_tweet(tweet_id, with_tweet_replies=False, end_cursor=None, total=None)
+get_tweet(tweet_id, with_tweet_replies=False, end_cursor=None, total=None, pagination=True)
 
     """
         Get Tweets from a user's profile.
@@ -344,6 +382,7 @@ get_tweet(tweet_id, with_tweet_replies=False, end_cursor=None, total=None)
             with_tweet_replies (bool, optional): Set to True if want to get the tweets replies as well. Defaults to False.
             end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Only applicable if with with_tweet_replies is True. Defaults to None.
             total (int, optional): Total(Max) number of results you want to get. If None, extracts all results. Defaults to None.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
 
         Returns:
             dict: Tweet data.
@@ -353,7 +392,7 @@ get_tweet(tweet_id, with_tweet_replies=False, end_cursor=None, total=None)
 ## Get Tweets Liked by a User -- LOGIN REQUIRED
 
 ```python
-get_liked_tweets(user_id, end_cursor=None, total=None)
+get_liked_tweets(user_id, end_cursor=None, total=None, pagination=True)
 
     """
         Get Tweets liked by a user.
@@ -362,6 +401,7 @@ get_liked_tweets(user_id, end_cursor=None, total=None)
             user_id (int): User ID.
             end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Defaults to None.
             total (int, optional): Total(Max) number of results you want to get. If None, extracts all results. Defaults to None.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
 
         Returns:
             dict: Returns data, cursor_endpoint, has_next_page
@@ -371,7 +411,7 @@ get_liked_tweets(user_id, end_cursor=None, total=None)
 ## Get Tweets from Home Timeline -- LOGIN REQUIRED
 
 ```python
-get_user_timeline(end_cursor=None, total=None)
+get_user_timeline(end_cursor=None, total=None, pagination=True)
 
     """
         Get tweets from home timeline (Home Page).
@@ -379,6 +419,7 @@ get_user_timeline(end_cursor=None, total=None)
         Args:
             end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Defaults to None.
             total (int, optional): Total(Max) number of results you want to get. If None, extracts all results. Defaults to None.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
 
         Returns:
             dict: Returns data, cursor_endpoint, has_next_page
@@ -388,7 +429,7 @@ get_user_timeline(end_cursor=None, total=None)
 ## Get Tweets from a Tweet List (Tweet Lists are Available on Twitter Mobile App) -- LOGIN REQUIRED
 
 ```python
-get_list_tweets(list_id, end_cursor=None, total=None)
+get_list_tweets(list_id, end_cursor=None, total=None, pagination=True)
     """
         Get tweets from a Tweets List.
 
@@ -396,6 +437,7 @@ get_list_tweets(list_id, end_cursor=None, total=None)
             list_id (str/int): Tweets List ID. (Can be extracted from twitter mobile app.)
             end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Defaults to None.
             total (int, optional): Total(Max) number of results you want to get. If None, extracts all results. Defaults to None.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
 
         Returns:
             dict: Returns data, cursor_endpoint, has_next_page
@@ -405,7 +447,7 @@ get_list_tweets(list_id, end_cursor=None, total=None)
 ## Get Tweets from a Topic Page -- LOGIN REQUIRED
 
 ```python
-get_topic_tweets(topic_id, end_cursor=None, total=None)
+get_topic_tweets(topic_id, end_cursor=None, total=None, pagination=True)
     """
         Get tweets from a Topic.
 
@@ -413,6 +455,7 @@ get_topic_tweets(topic_id, end_cursor=None, total=None)
             topic_id (str/int): Topic ID.
             end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Defaults to None.
             total (int, optional): Total(Max) number of results you want to get. If None, extracts all results. Defaults to None.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
 
         Returns:
             dict: Returns data, cursor_endpoint, has_next_page
@@ -422,7 +465,7 @@ get_topic_tweets(topic_id, end_cursor=None, total=None)
 ## Perform a Search -- LOGIN REQUIRED
 
 ```python
-search(search_query, end_cursor=None, total=None, search_filter=None)
+search(search_query, end_cursor=None, total=None, search_filter=None, pagination=True)
 
     """
         Get search results.
@@ -432,6 +475,7 @@ search(search_query, end_cursor=None, total=None, search_filter=None)
             end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Defaults to None.
             total (int, optional): Total(Max) Number of results you want to get. If None, extracts all results. Defaults to None.
             search_filter (str, optional): Type of search you want to perform. Available filters - Latest , Top , People , Photos , Videos. Defaults to 'Top'.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
 
         Returns:
             dict: Returns data, cursor_endpoint, has_next_page
@@ -441,7 +485,7 @@ search(search_query, end_cursor=None, total=None, search_filter=None)
 ## Get User's Followers/Followings/Mutual Followers -- LOGIN REQUIRED
 
 ```python
-get_friends(user_id, follower=False, following=False, mutual_follower=False, end_cursor=None, total=None)
+get_friends(user_id, follower=False, following=False, mutual_follower=False, end_cursor=None, total=None, pagination=True)
 
     """
         Get User's follower, followings or mutual followers.
@@ -453,6 +497,7 @@ get_friends(user_id, follower=False, following=False, mutual_follower=False, end
             mutual_followers (bool, optional): Set to True if want to extract mutual follower. Defaults to False.
             end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Defaults to None.
             total (int, optional): Total(Max) number of results you want to get. If None, extracts all results. Defaults to None.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
 
         Returns:
             dict: Returns data, cursor_endpoint, has_next_page
@@ -479,7 +524,7 @@ get_profile_business_category(user_id)
 ## Get List of Users Who Liked The Specified Tweet -- LOGIN REQUIRED
 
 ```python
-get_tweet_likes(tweet_id, end_cursor=None, total=None)
+get_tweet_likes(tweet_id, end_cursor=None, total=None, pagination=True)
 
     """
         Returns data about the users who liked the given tweet post.
@@ -488,6 +533,7 @@ get_tweet_likes(tweet_id, end_cursor=None, total=None)
             tweet_id (int): Tweet ID.
             end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Defaults to None.
             total (int, optional): Total(Max) number of results you want to get. If None, extracts all results. Defaults to None.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
 
         Returns:
             dict: Returns data, cursor_endpoint, has_next_page
@@ -497,7 +543,7 @@ get_tweet_likes(tweet_id, end_cursor=None, total=None)
 ## Get List of Users Who Re-Tweeted The Specified Tweet -- LOGIN REQUIRED
 
 ```python
-get_retweeters(tweet_id, end_cursor=None, total=None)
+get_retweeters(tweet_id, end_cursor=None, total=None, pagination=True)
 
     """
         Returs data about the users who retweeted the given tweet post.
@@ -506,6 +552,26 @@ get_retweeters(tweet_id, end_cursor=None, total=None)
             tweet_id (int): Tweet ID.
             end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Defaults to None.
             total (int, optional): Total(Max) number of results you want to get. If None, extracts all results. Defaults to None.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
+
+        Returns:
+            dict: Returns data, cursor_endpoint, has_next_page
+    """
+```
+
+## Get Highlight Tweets from a User's Profile
+
+```python
+get_user_highlights(user_id, end_cursor=None, total=None, pagination=True)
+
+    """
+        Get highlights from a user's profile.
+
+        Args:
+            user_id (int): User ID.
+            end_cursor (str, optional): Last endcursor point. (To start from where you left off last time). Defaults to None.
+            total (int, optional): Total(Max) number of results you want to get. If None, extracts all results. Defaults to None.
+            pagination (bool, optional): Set to False if want to handle each page request manually. Use end_cursor from the previous page/request to navigate to the next page. Defaults to True.
 
         Returns:
             dict: Returns data, cursor_endpoint, has_next_page
